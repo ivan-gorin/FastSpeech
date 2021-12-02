@@ -15,10 +15,12 @@ def main(config: ConfigParser):
     MelSpectrogram = config.get_melspectrogram()
     Aligner = config.get_aligner()
     Criterion = config.get_criterion()
+    Vocoder = config.get_vocoder()
     print(Model)
     print('Number of parameters', sum(p.numel() for p in Model.parameters()))
     n_epoch = config['trainer']['n_epoch']
     len_epoch = config['trainer']['len_epoch']
+    log_audio_interval = config['trainer']['log_audio_interval']
     device = config.get_device()
 
     for epoch in range(n_epoch):
@@ -47,6 +49,10 @@ def main(config: ConfigParser):
             Logger.add_scalar("Sum Loss", loss)
             loss.backward()
             Optimizer.step()
+            if (batch_idx+1) % log_audio_interval == 0:
+                audio = Vocoder.inference(pred_specs[0].unsqueeze(0))
+                Logger.add_audio('Synthesized', audio, sample_rate=config['melspectrogram']['sample_rate'])
+                Logger.add_audio('Real', waveform[0], sample_rate=config['melspectrogram']['sample_rate'])
             if batch_idx > len_epoch:
                 break
 

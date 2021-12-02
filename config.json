@@ -53,6 +53,7 @@
     "early_stop": 100,
     "len_epoch": 400,
     "visualize": "tensorboard",
-    "wandb_project": "FastSpeech"
+    "wandb_project": "FastSpeech",
+    "log_audio_interval": 50
   }
 }
