@@ -45,6 +45,7 @@
     }
   },
   "trainer": {
+    "overfit": true,
     "n_epoch": 100,
     "save_dir": "saved/",
     "save_period": 5,

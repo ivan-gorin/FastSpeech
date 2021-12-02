@@ -4,6 +4,7 @@ import os
 import json
 from datetime import datetime
 from pathlib import Path
+from itertools import repeat
 
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import OneCycleLR
@@ -58,6 +59,10 @@ class ConfigParser:
                                       **self.config['data']['train'])
         val_dataloader = DataLoader(dataset=test_dataset, collate_fn=LJSpeechCollator(),
                                     **self.config['data']['val'])
+        if self.config['trainer']['overfit']:
+            train_dataloader = iter(train_dataloader)
+            batch = next(train_dataloader)
+            train_dataloader = repeat(batch)
         return train_dataloader, val_dataloader
 
     def get_vocoder(self):

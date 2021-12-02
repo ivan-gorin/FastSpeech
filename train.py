@@ -45,7 +45,7 @@ def main(config: ConfigParser):
             Logger.add_scalar("Spec Loss", spec_loss)
             loss.backward()
             Optimizer.step()
-            break
+            # break
 
         Scheduler.step()
 
