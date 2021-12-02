@@ -152,17 +152,23 @@ def get_alignment(alignment, duration):
 class FastSpeech(nn.Module):
 
     def __init__(self, vocab_size, n_ph_block=6, n_melspec_block=6, hidden_size=384, n_attn_heads=2, kernel=3,
-                 conv_size=1536, lin_size=80, dropout=0.1, max_ph_len=5000, max_melspec_len=5000):
+                 conv_size=1536, lin_size=80, dropout=0.1, max_ph_len=1000, max_melspec_len=1000):
         super(FastSpeech, self).__init__()
 
         self.ph_embedding = nn.Embedding(vocab_size, hidden_size)
         self.ph_PE = PositionalEncoding(hidden_size, max_len=max_ph_len)
-        self.ph_FFTBlocks = nn.ModuleList([
+        # self.ph_FFTBlocks = nn.ModuleList([
+        #     FFTBlock(hidden_size, n_attn_heads, conv_size, kernel, dropout) for i in range(n_ph_block)
+        # ])
+        self.ph_FFTBlocks = nn.Sequential(*[
             FFTBlock(hidden_size, n_attn_heads, conv_size, kernel, dropout) for i in range(n_ph_block)
         ])
         self.length_reg = LengthRegulator(hidden_size, hidden_size, kernel, dropout)
-        self.melspec_PE = PositionalEncoding(hidden_size, max_melspec_len)
-        self.melspec_FFTBlocks = nn.ModuleList([
+        self.melspec_PE = PositionalEncoding(hidden_size, max_len=max_melspec_len)
+        # self.melspec_FFTBlocks = nn.ModuleList([
+        #     FFTBlock(hidden_size, n_attn_heads, conv_size, kernel, dropout) for i in range(n_melspec_block)
+        # ])
+        self.melspec_FFTBlocks = nn.Sequential(*[
             FFTBlock(hidden_size, n_attn_heads, conv_size, kernel, dropout) for i in range(n_melspec_block)
         ])
         self.linear = nn.Linear(hidden_size, lin_size)
@@ -171,12 +177,14 @@ class FastSpeech(nn.Module):
         x = self.ph_embedding(x)
         # [batch_size, seq_len, embedding_dim]
         x = self.ph_PE(x.transpose(0, 1)).transpose(0, 1)
-        for block in self.ph_FFTBlocks:
-            x = block(x)
+        # for block in self.ph_FFTBlocks:
+        #     x = block(x)
+        x = self.ph_FFTBlocks(x)
         x, durations = self.length_reg(x, true_duration)
         x = self.melspec_PE(x.transpose(0, 1)).transpose(0, 1)
-        for block in self.melspec_FFTBlocks:
-            x = block(x)
+        # for block in self.melspec_FFTBlocks:
+        #     x = block(x)
+        x = self.melspec_FFTBlocks(x)
         x = self.linear(x)
         return x.transpose(1, 2), durations
 

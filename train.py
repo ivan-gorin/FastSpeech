@@ -18,6 +18,7 @@ def main(config: ConfigParser):
     print(Model)
     print('Number of parameters', sum(p.numel() for p in Model.parameters()))
     n_epoch = config['trainer']['n_epoch']
+    len_epoch = config['trainer']['len_epoch']
     device = config.get_device()
 
     for epoch in range(n_epoch):
@@ -43,9 +44,11 @@ def main(config: ConfigParser):
             loss = duration_loss + spec_loss
             Logger.add_scalar("Duration Loss", duration_loss)
             Logger.add_scalar("Spec Loss", spec_loss)
+            Logger.add_scalar("Sum Loss", loss)
             loss.backward()
             Optimizer.step()
-            # break
+            if batch_idx > len_epoch:
+                break
 
         Scheduler.step()
 
