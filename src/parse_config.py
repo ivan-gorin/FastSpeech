@@ -2,6 +2,8 @@ from google_drive_downloader import GoogleDriveDownloader as gdd
 import torch
 import os
 import json
+from datetime import datetime
+from pathlib import Path
 
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import OneCycleLR
@@ -24,6 +26,9 @@ class ConfigParser:
             self.config = json.load(file)
 
         self.config = self.config
+        self.run_id = datetime.now().strftime(r"%m%d_%H_%M_%S_%f")[:-3]
+        self.log_dir = Path('log') / self.run_id
+        self.log_dir.mkdir(parents=True, exist_ok=True)
         self.name = self.config['name']
         self.seed = self.config['random_seed']
 
@@ -81,6 +86,6 @@ class ConfigParser:
         if self.config['trainer']['visualize'] == 'wandb':
             return WanDBWriter(self.config)
         elif self.config['trainer']['visualize'] == 'tensorboard':
-            return TensorboardWriter("./log", True)
+            return TensorboardWriter(self.log_dir, True)
         else:
             raise NotImplementedError()
