@@ -30,6 +30,9 @@ class PositionalEncoding(nn.Module):
 
 
 class MultiHeadedAttention(nn.Module):
+    """
+    inspired by https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
+    """
 
     def __init__(self, input_size, hidden_size, n_heads, dropout=0.1):
         super(MultiHeadedAttention, self).__init__()
@@ -106,6 +109,9 @@ class FFTBlock(nn.Module):
 
 
 class LengthRegulator(nn.Module):
+    """
+    inspired by https://github.com/xcmyz/FastSpeech/blob/master/modules.py
+    """
 
     def __init__(self, input_size, hidden_size, kernel, dropout=0.1):
         super(LengthRegulator, self).__init__()
@@ -144,7 +150,7 @@ def get_alignment(alignment, duration):
     for i in range(batch):
         count = 0
         for j in range(length):
-            alignment[i][j][count:count+duration[i][j]] = 1
+            alignment[i][j][count:count + duration[i][j]] = 1
             count += duration[i][j]
     return alignment
 
@@ -157,17 +163,11 @@ class FastSpeech(nn.Module):
 
         self.ph_embedding = nn.Embedding(vocab_size, hidden_size)
         self.ph_PE = PositionalEncoding(hidden_size, max_len=max_ph_len)
-        # self.ph_FFTBlocks = nn.ModuleList([
-        #     FFTBlock(hidden_size, n_attn_heads, conv_size, kernel, dropout) for i in range(n_ph_block)
-        # ])
         self.ph_FFTBlocks = nn.Sequential(*[
             FFTBlock(hidden_size, n_attn_heads, conv_size, kernel, dropout) for i in range(n_ph_block)
         ])
         self.length_reg = LengthRegulator(hidden_size, hidden_size, kernel, dropout)
         self.melspec_PE = PositionalEncoding(hidden_size, max_len=max_melspec_len)
-        # self.melspec_FFTBlocks = nn.ModuleList([
-        #     FFTBlock(hidden_size, n_attn_heads, conv_size, kernel, dropout) for i in range(n_melspec_block)
-        # ])
         self.melspec_FFTBlocks = nn.Sequential(*[
             FFTBlock(hidden_size, n_attn_heads, conv_size, kernel, dropout) for i in range(n_melspec_block)
         ])
@@ -177,14 +177,9 @@ class FastSpeech(nn.Module):
         x = self.ph_embedding(x)
         # [batch_size, seq_len, embedding_dim]
         x = self.ph_PE(x.transpose(0, 1)).transpose(0, 1)
-        # for block in self.ph_FFTBlocks:
-        #     x = block(x)
         x = self.ph_FFTBlocks(x)
         x, durations = self.length_reg(x, true_duration)
         x = self.melspec_PE(x.transpose(0, 1)).transpose(0, 1)
-        # for block in self.melspec_FFTBlocks:
-        #     x = block(x)
         x = self.melspec_FFTBlocks(x)
         x = self.linear(x)
         return x.transpose(1, 2), durations
-
