@@ -1,0 +1,7 @@
+librosa
+torch
+torchaudio
+googledrivedownloader
+tqdm
+wandb
+tensorboard
