@@ -57,8 +57,7 @@ class Trainer:
     def _process_batch(self, batch, epoch_num, batch_idx, is_train=True):
         if is_train:
             self.writer.set_step((epoch_num - 1) * self.len_epoch + batch_idx, 'train')
-        else:
-            self.writer.set_step((epoch_num - 1) * self.val_len_epoch + batch_idx, 'val')
+
         waveform = batch['waveform'].to(self.device)
         waveform_length = batch['waveform_length']
         transcript = batch['transcript']
@@ -77,31 +76,17 @@ class Trainer:
             pred_specs, pred_durations = self.model(tokens)
         duration_loss, spec_loss = self.criterion(durations, pred_durations, specs, pred_specs)
         loss = duration_loss + spec_loss
-        self.writer.add_scalar("Duration Loss", duration_loss)
-        self.writer.add_scalar("Spec Loss", spec_loss)
-        self.writer.add_scalar("Sum Loss", loss)
         if is_train:
+            self.writer.add_scalar("Duration Loss", duration_loss)
+            self.writer.add_scalar("Spec Loss", spec_loss)
+            self.writer.add_scalar("Sum Loss", loss)
             loss.backward()
             self.optimizer.step()
-        elif batch_idx == 0:
-            # save some prediction from val
-            # audio = self.vocoder.inference(pred_specs[0].unsqueeze(0))
-            # self.writer.add_audio('Synthesized', audio, sample_rate=self.config['melspectrogram']['sample_rate'])
-            # self.writer.add_audio('Real', waveform[0], sample_rate=self.config['melspectrogram']['sample_rate'])
-            # self.writer.add_text('Transcript', transcript[0])
-            pass
-            # inference and save test sentences
-            pred_specs, _ = self.model(self.test_tokens)
-            audios = self.vocoder.inference(pred_specs)
-            for i in range(audios.shape[0]):
-                self.writer.add_audio(f'TestSyth{i}', audios[i],
-                                      sample_rate=self.config['melspectrogram']['sample_rate'])
 
-        return loss
+        return duration_loss, spec_loss
 
     def _train_epoch(self, num):
         self.model.train()
-        # self.writer.add_scalar("epoch", num)
         for batch_idx, batch in enumerate(tqdm(self.train_dataloader, desc=f'Epoch {num}', total=self.len_epoch)):
             if batch_idx >= self.len_epoch:
                 break
@@ -109,13 +94,30 @@ class Trainer:
 
     def _val_epoch(self, num):
         self.model.eval()
-        loss_sum = 0
+        self.writer.set_step(num * self.len_epoch, 'val')
+        dur_loss_sum = 0
+        spec_loss_sum = 0
         with torch.no_grad():
             for batch_idx, batch in enumerate(tqdm(self.val_dataloader, desc=f'Validation', total=self.val_len_epoch)):
                 if batch_idx >= self.val_len_epoch:
                     break
-                loss_sum += self._process_batch(batch, num, batch_idx, is_train=False)
-        return loss_sum / self.val_len_epoch
+                dur_loss, spec_loss = self._process_batch(batch, num, batch_idx, is_train=False)
+                dur_loss_sum += dur_loss
+                dur_loss_sum += spec_loss
+        dur_loss_sum /= self.val_len_epoch
+        spec_loss_sum /= self.val_len_epoch
+        sum_loss = dur_loss_sum + dur_loss_sum
+        self.writer.add_scalar("Duration Loss", dur_loss_sum)
+        self.writer.add_scalar("Spec Loss", spec_loss_sum)
+        self.writer.add_scalar("Sum Loss", sum_loss)
+
+        # inference and save test sentences
+        pred_specs, _ = self.model(self.test_tokens)
+        audios = self.vocoder.inference(pred_specs)
+        for i in range(audios.shape[0]):
+            self.writer.add_audio(f'TestSyth{i}', audios[i],
+                                  sample_rate=self.config['melspectrogram']['sample_rate'])
+        return sum_loss
 
     def _train_process(self):
         for epoch_num in range(self.start_epoch, self.n_epoch + 1):
