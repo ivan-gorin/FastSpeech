@@ -21,8 +21,10 @@ class Trainer:
         self.vocoder = config.get_vocoder()
 
         self.n_epoch = config['trainer']['n_epoch']
-        self.len_epoch = min(config['trainer']['len_epoch'], len(self.train_dataloader.dataset))
-        self.val_len_epoch = min(config['trainer']['val_len_epoch'], len(self.val_dataloader.dataset))
+        self.len_epoch = min(config['trainer']['len_epoch'],
+                             len(self.train_dataloader.dataset) // config['data']['train']['batch_size'])
+        self.val_len_epoch = min(config['trainer']['val_len_epoch'],
+                                 len(self.val_dataloader.dataset) // config['data']['val']['batch_size'])
         self.log_audio_interval = config['trainer']['log_audio_interval']
         self.device = config.get_device()
         self.checkpoint_dir = config.save_dir
