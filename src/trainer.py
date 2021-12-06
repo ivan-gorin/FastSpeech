@@ -9,6 +9,7 @@ class Trainer:
 
     def __init__(self, config: ConfigParser):
         self.config = config
+        self.device = config.get_device()
         self.model = config.get_model()
         self.train_dataloader, self.val_dataloader = config.get_dataloaders()
         self.writer = config.get_writer()
@@ -30,7 +31,6 @@ class Trainer:
         self.val_len_epoch = min(config['trainer']['val_len_epoch'],
                                  len(self.val_dataloader.dataset) // config['data']['val']['batch_size'])
         self.log_audio_interval = config['trainer']['log_audio_interval']
-        self.device = config.get_device()
         self.checkpoint_dir = config.save_dir
         self.start_epoch = 1
         self.save_period = config['trainer']['save_period']
