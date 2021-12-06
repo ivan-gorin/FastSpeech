@@ -103,10 +103,10 @@ class Trainer:
                     break
                 dur_loss, spec_loss = self._process_batch(batch, num, batch_idx, is_train=False)
                 dur_loss_sum += dur_loss
-                dur_loss_sum += spec_loss
+                spec_loss_sum += spec_loss
         dur_loss_sum /= self.val_len_epoch
         spec_loss_sum /= self.val_len_epoch
-        sum_loss = dur_loss_sum + dur_loss_sum
+        sum_loss = dur_loss_sum + spec_loss_sum
         self.writer.add_scalar("Duration Loss", dur_loss_sum)
         self.writer.add_scalar("Spec Loss", spec_loss_sum)
         self.writer.add_scalar("Sum Loss", sum_loss)
