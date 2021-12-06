@@ -3,8 +3,8 @@ from src.trainer import Trainer
 import argparse
 
 
-def main(configp: ConfigParser):
-    trainer = Trainer(configp)
+def main(config: ConfigParser):
+    trainer = Trainer(config)
     trainer.train()
 
 
@@ -18,5 +18,5 @@ if __name__ == '__main__':
         help="config file path (default: None)",
         required=True
     )
-    config = ConfigParser(args.parse_args().config)
-    main(config)
+    configparser = ConfigParser(args.parse_args().config)
+    main(configparser)
