@@ -15,6 +15,7 @@ class Trainer:
         self.writer = config.get_writer()
         self.logger = config.get_logger('trainer')
         self.optimizer = config.get_optimizer(self.model)
+        self.start_epoch = 1
 
         if config.resume is not None:
             self._resume_checkpoint(config.resume)
@@ -32,7 +33,6 @@ class Trainer:
                                  len(self.val_dataloader.dataset) // config['data']['val']['batch_size'])
         self.log_audio_interval = config['trainer']['log_audio_interval']
         self.checkpoint_dir = config.save_dir
-        self.start_epoch = 1
         self.save_period = config['trainer']['save_period']
         test_sents = config['test_sents']
         tokenizer = torchaudio.pipelines.TACOTRON2_GRIFFINLIM_CHAR_LJSPEECH.get_text_processor()
