@@ -158,7 +158,7 @@ def get_alignment(alignment, duration):
 class FastSpeech(nn.Module):
 
     def __init__(self, vocab_size, n_ph_block=6, n_melspec_block=6, hidden_size=384, n_attn_heads=2, kernel=3,
-                 conv_size=1536, lin_size=80, dropout=0.1, max_ph_len=1000, max_melspec_len=1000):
+                 conv_size=1536, lin_size=80, dropout=0.1, max_ph_len=3000, max_melspec_len=3000):
         super(FastSpeech, self).__init__()
 
         self.ph_embedding = nn.Embedding(vocab_size, hidden_size)
@@ -173,7 +173,7 @@ class FastSpeech(nn.Module):
         ])
         self.linear = nn.Linear(hidden_size, lin_size)
 
-    def forward(self, x, true_duration):
+    def forward(self, x, true_duration=None):
         x = self.ph_embedding(x)
         # [batch_size, seq_len, embedding_dim]
         x = self.ph_PE(x.transpose(0, 1)).transpose(0, 1)

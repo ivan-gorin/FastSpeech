@@ -3,7 +3,7 @@
   "device": "cuda",
   "random_seed": 42,
   "melspectrogram": {
-    "sample_rate":  22050,
+    "sample_rate": 22050,
     "win_length": 1024,
     "hop_length": 256,
     "n_fft": 1024,
@@ -16,12 +16,12 @@
     "split": 0.95,
     "train": {
       "batch_size": 4,
-      "num_workers": 1,
-      "shuffle": false
+      "num_workers": 6,
+      "shuffle": true
     },
     "val": {
-      "batch_size": 8,
-      "num_workers": 1,
+      "batch_size": 4,
+      "num_workers": 6,
       "shuffle": true
     }
   },
@@ -45,15 +45,21 @@
     }
   },
   "trainer": {
-    "overfit": true,
-    "n_epoch": 100,
+    "overfit": false,
+    "n_epoch": 5,
     "save_dir": "saved/",
     "save_period": 5,
     "verbosity": 2,
     "early_stop": 100,
-    "len_epoch": 400,
+    "len_epoch": 10,
+    "val_len_epoch": 5,
     "visualize": "tensorboard",
     "wandb_project": "FastSpeech",
     "log_audio_interval": 50
-  }
+  },
+  "test_sents": [
+    "A defibrillator is a device that gives a high energy electric shock to the heart of someone who is in cardiac arrest",
+    "Massachusetts Institute of Technology may be best known for its math, science and engineering education",
+    "Wasserstein distance or Kantorovich Rubinstein metric is a distance function defined between probability distributions on a given metric space"
+  ]
 }

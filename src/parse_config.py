@@ -19,6 +19,33 @@ from .loss import FastSpeechLoss
 from .logger import WanDBWriter, TensorboardWriter
 from torch.utils.data import DataLoader
 from typing import Tuple
+import logging
+import logging.config
+from .utils import ROOT_PATH, read_json
+
+
+def setup_logging(
+        save_dir, log_config=None, default_level=logging.INFO
+):
+    """
+    Setup logging configuration
+    """
+    if log_config is None:
+        log_config = str(ROOT_PATH / "src" / "logger_config.json")
+    log_config = Path(log_config)
+    if log_config.is_file():
+        config = read_json(log_config)
+        # modify logging paths based on run config
+        for _, handler in config["handlers"].items():
+            if "filename" in handler:
+                handler["filename"] = str(save_dir / handler["filename"])
+
+        logging.config.dictConfig(config)
+    else:
+        print(
+            "Warning: logging configuration file is not found in {}.".format(log_config)
+        )
+        logging.basicConfig(level=default_level)
 
 
 class ConfigParser:
@@ -26,16 +53,27 @@ class ConfigParser:
         with open(config_file, 'rt') as file:
             self.config = json.load(file)
 
-        self.config = self.config
         self.run_id = datetime.now().strftime(r"%m%d_%H_%M_%S_%f")[:-3]
         self.log_dir = Path('log') / self.run_id
+        self.save_dir = Path('saved') / self.run_id
+        self.tensorboard_dir = Path('.tensorboard') / self.run_id
         self.log_dir.mkdir(parents=True, exist_ok=True)
+        self.save_dir.mkdir(parents=True, exist_ok=True)
+        self.tensorboard_dir.mkdir(parents=True, exist_ok=True)
         self.name = self.config['name']
         self.seed = self.config['random_seed']
 
         self.device = 'cpu'
         if self.config['device'] == 'cuda' and torch.cuda.is_available():
             self.device = torch.device('cuda:0')
+
+        setup_logging(self.log_dir)
+        self.log_levels = {0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG}
+        if 'resume' in self.config:
+            self.resume = Path(self.config['resume'])
+            # self.resume_cfg = self.resume.parent / "config.json"
+        else:
+            self.resume = None
 
     def __getitem__(self, item: str):
         return self.config[item]
@@ -87,10 +125,19 @@ class ConfigParser:
     def get_criterion(self):
         return FastSpeechLoss()
 
-    def get_logger(self):
+    def get_writer(self):
         if self.config['trainer']['visualize'] == 'wandb':
             return WanDBWriter(self.config)
         elif self.config['trainer']['visualize'] == 'tensorboard':
-            return TensorboardWriter(self.log_dir, True)
+            return TensorboardWriter(self.tensorboard_dir, True)
         else:
             raise NotImplementedError()
+
+    def get_logger(self, name, verbosity=1):
+        msg_verbosity = "verbosity option {} is invalid. Valid options are {}.".format(
+            verbosity, self.log_levels.keys()
+        )
+        assert verbosity in self.log_levels, msg_verbosity
+        logger = logging.getLogger(name)
+        logger.setLevel(self.log_levels[verbosity])
+        return logger
