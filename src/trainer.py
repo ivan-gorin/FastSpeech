@@ -14,6 +14,10 @@ class Trainer:
         self.writer = config.get_writer()
         self.logger = config.get_logger('trainer')
         self.optimizer = config.get_optimizer(self.model)
+
+        if config.resume is not None:
+            self._resume_checkpoint(config.resume)
+
         self.scheduler = config.get_scheduler(self.optimizer)
         self.melspectrogram = config.get_melspectrogram()
         self.aligner = config.get_aligner()
@@ -39,9 +43,6 @@ class Trainer:
 
         self.test_tokens, _ = tokenizer(test_sents)
         self.test_tokens = self.test_tokens.to(self.device)
-
-        if config.resume is not None:
-            self._resume_checkpoint(config.resume)
 
         self.logger.info(self.model)
         self.logger.info('Number of parameters {}'.format(sum(p.numel() for p in self.model.parameters())))
@@ -82,6 +83,7 @@ class Trainer:
             self.writer.add_scalar("Sum Loss", loss)
             loss.backward()
             self.optimizer.step()
+            self.scheduler.step()
 
         return duration_loss, spec_loss
 
@@ -123,7 +125,6 @@ class Trainer:
         for epoch_num in range(self.start_epoch, self.n_epoch + 1):
             self._last_epoch = epoch_num
             self._train_epoch(epoch_num)
-            self.scheduler.step()
             best = False
             loss_avg = self._val_epoch(epoch_num).item()
             self.logger.info('Val average loss: {}'.format(loss_avg))
