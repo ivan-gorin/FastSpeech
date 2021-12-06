@@ -181,8 +181,8 @@ class Trainer:
         #     )
         # else:
         for param, value in self.config['optimizer']['args'].items():
-            if param in checkpoint['optimizer']['param_groups']:
-                checkpoint['optimizer']['param_groups'][param] = value
+            if param in checkpoint['optimizer']['param_groups'][0]:
+                checkpoint['optimizer']['param_groups'][0][param] = value
         self.optimizer.load_state_dict(checkpoint["optimizer"])
         self.logger.info(self.optimizer)
         self.logger.info(
