@@ -15,3 +15,5 @@ python train.py --config config.json
 ```
 
 Choose `wandb` or `tensorboard` visualizer in `config.json`
+
+[Report](https://wandb.ai/ivan-gorin/FastSpeech/reports/FastSpeech-Report--VmlldzoxMzA4NjI4) (in Russian)
